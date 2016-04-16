@@ -14,7 +14,6 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnTextChanged;
 import rx.Subscription;
-import rx.functions.Action1;
 import rx.subjects.PublishSubject;
 
 import static android.text.TextUtils.isEmpty;
@@ -37,11 +36,8 @@ public class DoubleBindingTextViewFragment
         ButterKnife.bind(this, layout);
 
         _resultEmitterSubject = PublishSubject.create();
-        _subscription = _resultEmitterSubject.asObservable().subscribe(new Action1<Float>() {
-            @Override
-            public void call(Float aFloat) {
-                _result.setText(String.valueOf(aFloat));
-            }
+        _subscription = _resultEmitterSubject.asObservable().subscribe(aFloat -> {
+            _result.setText(String.valueOf(aFloat));
         });
 
         onNumberChanged();

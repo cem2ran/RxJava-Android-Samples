@@ -27,7 +27,6 @@ import co.kaush.core.util.CoreNullnessUtils;
 import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Func1;
 import timber.log.Timber;
 
 import static java.lang.String.format;
@@ -73,12 +72,7 @@ public class DebounceSearchEmitterFragment
 
         _subscription = RxTextView.textChangeEvents(_inputSearchText)//
               .debounce(400, TimeUnit.MILLISECONDS)// default Scheduler is Computation
-              .filter(new Func1<TextViewTextChangeEvent, Boolean>() {
-                  @Override
-                  public Boolean call(TextViewTextChangeEvent changes) {
-                      return CoreNullnessUtils.isNotNullOrEmpty(_inputSearchText.getText().toString());
-                  }
-              })
+              .filter(changes -> CoreNullnessUtils.isNotNullOrEmpty(_inputSearchText.getText().toString()))
               .observeOn(AndroidSchedulers.mainThread())//
               .subscribe(_getSearchObserver());
     }
@@ -110,8 +104,8 @@ public class DebounceSearchEmitterFragment
     // Method that help wiring up the example (irrelevant to RxJava)
 
     private void _setupLogger() {
-        _logs = new ArrayList<String>();
-        _adapter = new LogAdapter(getActivity(), new ArrayList<String>());
+        _logs = new ArrayList<>();
+        _adapter = new LogAdapter(getActivity(), new ArrayList<>());
         _logsList.setAdapter(_adapter);
     }
 
@@ -125,13 +119,9 @@ public class DebounceSearchEmitterFragment
             _logs.add(0, logMsg + " (NOT main thread) ");
 
             // You can only do below stuff on main thread.
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-
-                @Override
-                public void run() {
-                    _adapter.clear();
-                    _adapter.addAll(_logs);
-                }
+            new Handler(Looper.getMainLooper()).post(() -> {
+                _adapter.clear();
+                _adapter.addAll(_logs);
             });
         }
     }

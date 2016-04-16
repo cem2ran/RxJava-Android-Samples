@@ -23,7 +23,6 @@ import butterknife.ButterKnife;
 import rx.Observer;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Func1;
 import timber.log.Timber;
 
 /**
@@ -88,13 +87,10 @@ public class BufferDemoFragment
 
     private Subscription _getBufferedSubscription() {
         return RxView.clicks(_tapBtn)
-              .map(new Func1<Void, Integer>() {
-                  @Override
-                  public Integer call(Void onClickEvent) {
-                      Timber.d("--------- GOT A TAP");
-                      _log("GOT A TAP");
-                      return 1;
-                  }
+              .map(onClickEvent -> {
+                  Timber.d("--------- GOT A TAP");
+                  _log("GOT A TAP");
+                  return 1;
               })
               .buffer(2, TimeUnit.SECONDS)
               .observeOn(AndroidSchedulers.mainThread())
@@ -129,7 +125,7 @@ public class BufferDemoFragment
 
     private void _setupLogger() {
         _logs = new ArrayList<>();
-        _adapter = new LogAdapter(getActivity(), new ArrayList<String>());
+        _adapter = new LogAdapter(getActivity(), new ArrayList<>());
         _logsList.setAdapter(_adapter);
     }
 
@@ -143,13 +139,9 @@ public class BufferDemoFragment
             _logs.add(0, logMsg + " (NOT main thread) ");
 
             // You can only do below stuff on main thread.
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-
-                @Override
-                public void run() {
-                    _adapter.clear();
-                    _adapter.addAll(_logs);
-                }
+            new Handler(Looper.getMainLooper()).post(() -> {
+                _adapter.clear();
+                _adapter.addAll(_logs);
             });
         }
     }

@@ -19,7 +19,6 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import rx.Observer;
-import rx.functions.Action0;
 import rx.observables.ConnectableObservable;
 import rx.subscriptions.CompositeSubscription;
 import timber.log.Timber;
@@ -62,12 +61,7 @@ public class RotationPersist1Fragment
     public void observeResults(ConnectableObservable<Integer> intsObservable) {
 
         _subscriptions.add(//
-              intsObservable.doOnSubscribe(new Action0() {
-                  @Override
-                  public void call() {
-                      _log("Subscribing to intsObservable");
-                  }
-              }).subscribe(new Observer<Integer>() {
+              intsObservable.doOnSubscribe(() -> _log("Subscribing to intsObservable")).subscribe(new Observer<Integer>() {
                   @Override
                   public void onCompleted() {
                       _log("Observable is complete");
@@ -120,7 +114,7 @@ public class RotationPersist1Fragment
 
     private void _setupLogger() {
         _logs = new ArrayList<>();
-        _adapter = new LogAdapter(getActivity(), new ArrayList<String>());
+        _adapter = new LogAdapter(getActivity(), new ArrayList<>());
         _logList.setAdapter(_adapter);
     }
 
@@ -128,13 +122,9 @@ public class RotationPersist1Fragment
         _logs.add(0, logMsg);
 
         // You can only do below stuff on main thread.
-        new Handler(getMainLooper()).post(new Runnable() {
-
-            @Override
-            public void run() {
-                _adapter.clear();
-                _adapter.addAll(_logs);
-            }
+        new Handler(getMainLooper()).post(() -> {
+            _adapter.clear();
+            _adapter.addAll(_logs);
         });
     }
 

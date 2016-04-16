@@ -22,8 +22,6 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import rx.Observable;
-import rx.functions.Action0;
-import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.subscriptions.CompositeSubscription;
 import timber.log.Timber;
@@ -80,24 +78,11 @@ public class PollingFragment
 
         _subscriptions.add(//
               Observable.interval(INITIAL_DELAY, POLLING_INTERVAL, TimeUnit.MILLISECONDS)
-                    .map(new Func1<Long, String>() {
-                        @Override
-                        public String call(Long heartBeat) {
-                            return _doNetworkCallAndGetStringResult(heartBeat);
-                        }
-                    }).take(pollCount)
-                    .doOnSubscribe(new Action0() {
-                        @Override
-                        public void call() {
-                            _log(String.format("Start simple polling - %s", _counter));
-                        }
-                    })
-                    .subscribe(new Action1<String>() {
-                        @Override
-                        public void call(String taskName) {
-                            _log(String.format(Locale.US, "Executing polled task [%s] now time : [xx:%02d]",
-                                  taskName, _getSecondHand()));
-                        }
+                    .map(this::_doNetworkCallAndGetStringResult).take(pollCount)
+                    .doOnSubscribe(() -> _log(String.format("Start simple polling - %s", _counter)))
+                    .subscribe(taskName -> {
+                        _log(String.format(Locale.US, "Executing polled task [%s] now time : [xx:%02d]",
+                              taskName, _getSecondHand()));
                     })
         );
     }
@@ -115,17 +100,11 @@ public class PollingFragment
         _subscriptions.add(//
               Observable.just(1)
                     .repeatWhen(new RepeatWithDelay(pollCount, pollingInterval))
-                    .subscribe(new Action1<Object>() {
-                        @Override
-                        public void call(Object o) {
-                            _log(String.format(Locale.US, "Executing polled task now time : [xx:%02d]",
-                                  _getSecondHand()));
-                        }
-                    }, new Action1<Throwable>() {
-                        @Override
-                        public void call(Throwable e) {
-                            Timber.d(e, "arrrr. Error");
-                        }
+                    .subscribe(o -> {
+                        _log(String.format(Locale.US, "Executing polled task now time : [xx:%02d]",
+                              _getSecondHand()));
+                    }, e -> {
+                        Timber.d(e, "arrrr. Error");
                     })
         );
     }
@@ -163,24 +142,21 @@ public class PollingFragment
             // it is critical to use inputObservable in the chain for the result
             // ignoring it and doing your own thing will break the sequence
 
-            return inputObservable.flatMap(new Func1<Void, Observable<?>>() {
-                @Override
-                public Observable<?> call(Void blah) {
+            return inputObservable.flatMap((Func1<Void, Observable<?>>) blah -> {
 
 
-                    if (_repeatCount >= _repeatLimit) {
-                        // terminate the sequence cause we reached the limit
-                        _log("Completing sequence");
-                        return Observable.empty();
-                    }
-
-                    // since we don't get an input
-                    // we store state in this handler to tell us the point of time we're firing
-                    _repeatCount++;
-
-                    return Observable.timer(_repeatCount * _pollingInterval,
-                          TimeUnit.MILLISECONDS);
+                if (_repeatCount >= _repeatLimit) {
+                    // terminate the sequence cause we reached the limit
+                    _log("Completing sequence");
+                    return Observable.empty();
                 }
+
+                // since we don't get an input
+                // we store state in this handler to tell us the point of time we're firing
+                _repeatCount++;
+
+                return Observable.timer(_repeatCount * _pollingInterval,
+                      TimeUnit.MILLISECONDS);
             });
         }
     }
@@ -221,20 +197,16 @@ public class PollingFragment
             _logs.add(0, logMsg + " (NOT main thread) ");
 
             // You can only do below stuff on main thread.
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
-
-                @Override
-                public void run() {
-                    _adapter.clear();
-                    _adapter.addAll(_logs);
-                }
+            new Handler(Looper.getMainLooper()).post(() -> {
+                _adapter.clear();
+                _adapter.addAll(_logs);
             });
         }
     }
 
     private void _setupLogger() {
         _logs = new ArrayList<>();
-        _adapter = new LogAdapter(getActivity(), new ArrayList<String>());
+        _adapter = new LogAdapter(getActivity(), new ArrayList<>());
         _logsList.setAdapter(_adapter);
         _counter = 0;
     }

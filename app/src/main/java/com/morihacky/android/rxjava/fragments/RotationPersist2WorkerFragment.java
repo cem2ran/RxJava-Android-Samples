@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import rx.Observable;
 import rx.Subscription;
-import rx.functions.Func1;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
 
@@ -53,12 +52,7 @@ public class RotationPersist2WorkerFragment
 
         _storedIntsSubscription =//
               Observable.interval(1, TimeUnit.SECONDS)//
-                    .map(new Func1<Long, Integer>() {
-                        @Override
-                        public Integer call(Long aLong) {
-                            return aLong.intValue();
-                        }
-                    })//
+                    .map(Long::intValue)//
                     .take(20)//
                     .subscribe(_intStream);
     }
